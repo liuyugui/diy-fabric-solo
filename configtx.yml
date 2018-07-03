@@ -1,0 +1,57 @@
+Profiles:
+    GitbookOrdererGenesis:
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *OrdererOrg
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    #这里需要把你添加的节点都加到这里
+                    - *OrgBlog
+                    - *OrgHome
+    GitbookChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                #这里需要把你添加的节点都加到这里
+                - *OrgBlog
+                - *OrgHome
+Organizations:
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+        #Orderer的msp地址
+        MSPDir: crypto-config/ordererOrganizations/gitbook.cn/msp
+    - &OrgBlog
+        Name: OrgBlogMSP
+        ID: OrgBlogMSP
+        #Blog的msp地址
+        MSPDir: crypto-config/peerOrganizations/blog.gitbook.cn/msp
+        AnchorPeers:
+            - Host: peer0.blog.gitbook.cn
+              Port: 7051
+    - &OrgHome
+        Name: OrgHomeMSP
+        ID: OrgHomeMSP
+        MSPDir: crypto-config/peerOrganizations/home.gitbook.cn/msp
+        AnchorPeers:
+            - Host: peer0.home.gitbook.cn
+              Port: 7051
+
+Orderer: &OrdererDefaults
+    #这里是order类型，我们这里用solo
+    OrdererType: solo
+    Addresses:
+        # order的容器名字加端口
+        - orderer.gitbook.cn:7050
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+    Organizations:
+
+Application: &ApplicationDefaults
+    Organizations:

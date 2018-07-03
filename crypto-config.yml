@@ -1,0 +1,27 @@
+
+#配置order节点证书
+OrdererOrgs:
+  - Name: Orderer
+    Domain: gitbook.cn
+    Specs:
+      - Hostname: orderer
+        CommonName: orderer.gitbook.cn
+#配置peer证书
+PeerOrgs:
+  #第一个组织，这里叫Blog
+  - Name: Blog
+    #节点的域名
+    Domain: blog.gitbook.cn
+    Template:
+      #节点个数
+      Count: 2
+    Users:
+      #除了Admin用户外生成的用户证书数量
+      Count: 1
+  #第二个组织，这里叫Blog
+  - Name: Home
+    Domain: home.gitbook.cn
+    Template:
+      Count: 2
+    Users:
+      Count: 1

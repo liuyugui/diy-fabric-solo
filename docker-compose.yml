@@ -1,0 +1,257 @@
+version: '2.0'
+
+networks:
+  byfn:
+
+services:
+
+  orderer.gitbook.cn:
+      container_name: orderer.gitbook.cn
+      image: hyperledger/fabric-orderer
+      environment:
+        - ORDERER_GENERAL_LOGLEVEL=debug
+        - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+        - ORDERER_GENERAL_GENESISMETHOD=file
+        - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/order.genesis.block
+        - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+        - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer/msp
+      ports:
+        - 7050:7050
+      working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+      command: orderer start
+      volumes:
+          - ./config/:/etc/hyperledger/configtx
+          - ./crypto-config/ordererOrganizations/gitbook.cn/orderers/orderer.gitbook.cn/:/etc/hyperledger/msp/orderer
+          - ./crypto-config/ordererOrganizations/gitbook.cn/msp:/var/hyperledger/orderer/msp
+          - ./crypto-config/ordererOrganizations/gitbook.cn/tlsca:/var/hyperledger/orderer/tls
+      networks:
+        - byfn
+
+
+  ca.blog.gitbook.cn:
+    container_name: ca.blog.gitbook.cn
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.blog.gitbook.cn
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.blog.gitbook.cn-cert.pem
+      #这里需要改成你本地的私钥文件地址
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/5039b4748dccd859686ac647b868733fe5f2c9d56f8daf979d3f697a3599f371_sk
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/blog.gitbook.cn/ca/:/etc/hyperledger/fabric-ca-server-config
+    networks:
+      - byfn
+
+  ca.home.gitbook.cn:
+    container_name: ca.home.gitbook.cn
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.home.gitbook.cn
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.home.gitbook.cn-cert.pem
+      #这里需要改成你本地的私钥文件地址
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/06b6baddc6224a41a56ec4ac552c31241fd30b3e7f755cf7164b31d4e5cee5bc_sk
+    ports:
+      - "8054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/home.gitbook.cn/ca/:/etc/hyperledger/fabric-ca-server-config
+    networks:
+      - byfn
+
+
+  peer0.blog.gitbook.cn:
+    container_name: peer0.blog.gitbook.cn
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.blog.gitbook.cn
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=OrgBlogMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.blog.gitbook.cn:7051
+
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=chat_byfn
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0.blog.couchdb:5984
+
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - 7051:7051
+      - 7052:7052
+      - 7053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/blog.gitbook.cn/peers/peer0.blog.gitbook.cn/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/blog.gitbook.cn/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    networks:
+      - byfn
+
+  peer1.blog.gitbook.cn:
+    container_name: peer1.blog.gitbook.cn
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.blog.gitbook.cn
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=OrgBlogMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer1.blog.gitbook.cn:7051
+
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=chat_byfn
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1.blog.couchdb:5984
+
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - 8051:7051
+      - 8052:7052
+      - 8053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/blog.gitbook.cn/peers/peer1.blog.gitbook.cn/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/blog.gitbook.cn/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    networks:
+      - byfn
+
+  peer0.home.gitbook.cn:
+    container_name: peer0.home.gitbook.cn
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.home.gitbook.cn
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=OrgHomeMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.home.gitbook.cn:7051
+
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=chat_byfn
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer0.home.couchdb:5984
+
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - 9051:7051
+      - 9052:7052
+      - 9053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/home.gitbook.cn/peers/peer0.home.gitbook.cn/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/home.gitbook.cn/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    networks:
+      - byfn
+
+  peer1.home.gitbook.cn:
+    container_name: peer1.home.gitbook.cn
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.home.gitbook.cn
+      - CORE_LOGGING_PEER=debug
+      - CORE_CHAINCODE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_LOCALMSPID=OrgHomeMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer1.home.gitbook.cn:7051
+
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=chat_byfn
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=peer1.home.couchdb:5984
+
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    ports:
+      - 10051:7051
+      - 10052:7052
+      - 10053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/home.gitbook.cn/peers/peer1.home.gitbook.cn/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/home.gitbook.cn/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    networks:
+      - byfn
+
+  peer0.blog.couchdb:
+    container_name: peer0.blog.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 5984:5984
+    networks:
+      - byfn
+  peer1.blog.couchdb:
+    container_name: peer1.blog.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 6984:5984
+    networks:
+      - byfn
+  peer0.home.couchdb:
+    container_name: peer0.home.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 7984:5984
+    networks:
+      - byfn
+  peer1.home.couchdb:
+    container_name: peer1.home.couchdb
+    image: hyperledger/fabric-couchdb
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 8984:5984
+    networks:
+      - byfn
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.blog.gitbook.cn:7051
+      - CORE_PEER_LOCALMSPID=OrgBlogMSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/blog.gitbook.cn/users/Admin@blog.gitbook.cn/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config/:/opt/gopath/src/github.com/hyperledger/fabric/peer/config
+        - ./chaincode/:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    networks:
+        - byfn
+
